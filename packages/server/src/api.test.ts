@@ -340,6 +340,14 @@ describe('orca worktrees (concurrent first requests)', () => {
       const responses = await Promise.all(urls.map((u) => fetch(u)));
       expect(responses.map((r) => r.status)).toEqual([200, 200, 200, 200]);
       await responses[3]!.body!.cancel();
+      // wait until the live-update connection (and with it the file watcher) is released: Windows cannot delete a watched directory
+      const t0 = Date.now();
+      while (Date.now() - t0 < 5000) {
+        const c = (await (await fetch(`http://127.0.0.1:${s.port}/api/clients?${q}`)).json()) as { count: number };
+        if (c.count === 0) break;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      await new Promise((r) => setTimeout(r, 200));
     } finally {
       await s.close();
       t.cleanup();

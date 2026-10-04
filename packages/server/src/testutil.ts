@@ -29,7 +29,7 @@ let tick = 1_700_000_000;
 
 export function tempDir(prefix: string): Fixture {
   const dir = mkdtempSync(join(tmpdir(), `ogg-${prefix}-`));
-  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5 }) };
+  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }) };
 }
 
 export function write(repo: string, rel: string, content: string): void {
