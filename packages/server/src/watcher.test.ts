@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GitRepo } from './repo.js';
@@ -37,7 +38,8 @@ async function collect(repoPath: string): Promise<{ events: WatchEvent[]; stop: 
 describe('RepoWatcher', () => {
   it('uses a linked worktree whose .git is a file', async () => {
     const repo = await GitRepo.open(linked);
-    expect(repo.path.replace(/\\/g, '/')).toBe(linked.replace(/\\/g, '/'));
+    // the same directory, however the platform spells it (macOS /private/var, Windows 8.3 short names)
+    expect(realpathSync.native(repo.path)).toBe(realpathSync.native(linked));
     const w = await collect(linked);
     // a branch created from the MAIN checkout lives in the shared refs dir
     sh(main, ['branch', 'created-elsewhere']);

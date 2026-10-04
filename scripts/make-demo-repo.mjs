@@ -60,9 +60,9 @@ function merge(cwd, branch, message) {
   git(cwd, ['merge', '-q', '--no-ff', '-m', message, branch], tick(cwd));
 }
 
-rmSync(target, { recursive: true, force: true });
-rmSync(origin, { recursive: true, force: true });
-rmSync(other, { recursive: true, force: true });
+rmSync(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+rmSync(origin, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+rmSync(other, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 mkdirSync(target, { recursive: true });
 git(target, ['init', '-q', '-b', 'main']);
 
@@ -115,7 +115,7 @@ git(dirname(target), ['clone', '-q', origin, other]);
 commit(other, 'Collaborator: fix flaky test');
 commit(other, 'Collaborator: bump CI node version');
 git(other, ['push', '-q', 'origin', 'main']);
-rmSync(other, { recursive: true, force: true });
+rmSync(other, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 git(target, ['fetch', '-q', '--prune']);
 // local-only work: main is now 3 ahead / 2 behind origin/main
 commit(target, 'Local: add widget themes');
