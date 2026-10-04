@@ -7,7 +7,7 @@
  * that spawn anything, so a replacement stays local.
  */
 import { spawn } from 'node:child_process';
-import { isServerAlive, readLock, type LockInfo } from '@orca-git-graph/platform';
+import { cliEnv, isServerAlive, readLock, type LockInfo } from '@orca-git-graph/platform';
 
 export interface ServerProcessDeps {
   readLock: () => Promise<LockInfo | null>;
@@ -35,7 +35,8 @@ export const realDeps: ServerProcessDeps = {
       detached: true,
       stdio: 'ignore',
       windowsHide: true,
-      env: { ...process.env, ...env, ...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}) },
+      // the worker's own environment is minimal: complete it so the server (and the orca CLI it runs) can find user data
+      env: { ...cliEnv(), ...env, ...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}) },
     });
     child.unref();
   },

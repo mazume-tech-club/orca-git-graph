@@ -4,7 +4,7 @@
 // plugin through the Orca UI. Host calls are answered here; everything else (orca CLI, detached server,
 // tabs) is real, so it opens a real tab in the running Orca.
 //
-//   node packages/orca-plugin/scripts/host-harness.mjs [--plugin <dir>] [--worktree <orca worktree id>] [--keep]
+//   node packages/orca-plugin/scripts/host-harness.mjs [--plugin <dir>] [--worktree <orca worktree id>] [--keep] [--minimal-env]
 //   (--plugin defaults to packages/orca-plugin/dist; point it at a fresh clone of the release tree to test what Orca would install)
 //
 // Verified against Orca 1.4.220 on Windows. Opt-in manual check, not part of `pnpm test`.
@@ -19,6 +19,8 @@ const args = process.argv.slice(2);
 const pluginRoot = args.includes('--plugin') ? resolve(args[args.indexOf('--plugin') + 1]) : resolve(here, '..', 'dist');
 const wtArg = args.includes('--worktree') ? args[args.indexOf('--worktree') + 1] : null;
 const keep = args.includes('--keep');
+// --minimal-env: give the worker only what Orca's real worker gets (no USERPROFILE/APPDATA/LOCALAPPDATA), to reproduce environment bugs
+const minimalEnv = args.includes('--minimal-env');
 
 function orcaBinary() {
   const candidates =
@@ -45,7 +47,7 @@ const terminals = cli(['terminal', 'list']).terminals.filter((t) => t.worktreeId
 const context = { branch: wt.branch ?? '', displayName: wt.displayName, terminals: terminals.slice(0, 3).map((t) => ({ id: t.handle })) };
 console.log('pretending focused worktree:', wt.worktreeId, JSON.stringify(context));
 
-const child = fork(hostEntry, [], { execPath: orcaBin, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
+const child = fork(hostEntry, [], { execPath: orcaBin, env: minimalEnv ? { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, ELECTRON_RUN_AS_NODE: '1' } : { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
 const pending = new Map();
 let nextCall = 1;
 let readyResolve;

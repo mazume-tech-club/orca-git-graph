@@ -68,7 +68,7 @@ type Failure = Extract<OpenResult, { ok: false }>;
 
 function makeFail(d: LauncherDeps) {
   return async (reason: Failure['reason'], message: string, body?: string): Promise<OpenResult> => {
-    d.log(`open-git-graph failed (${reason}): ${message}`);
+    d.log(`open-git-graph failed (${reason}): ${message}${body ? ` — ${body.replace(/\s+/g, ' ').slice(0, 400)}` : ''}`);
     await d.notify(message, body).catch(() => undefined);
     return { ok: false, reason, message };
   };

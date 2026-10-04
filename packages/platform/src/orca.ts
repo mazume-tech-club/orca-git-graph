@@ -66,9 +66,33 @@ interface Envelope<T> {
   error?: { code?: string; message?: string };
 }
 
+/**
+ * Environment for running the `orca` CLI. A plugin worker is started by Orca with a minimal environment (no
+ * USERPROFILE / APPDATA / LOCALAPPDATA on Windows, observed on Orca 1.4.220), and the CLI then cannot locate the
+ * running Orca's user-data directory and fails. So the user-profile variables are filled in from the home
+ * directory, and ELECTRON_RUN_AS_NODE (set for the worker itself) is not passed on.
+ */
+export function cliEnv(
+  base: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+  home: string = homedir(),
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...base };
+  delete env.ELECTRON_RUN_AS_NODE;
+  if (platform === 'win32') {
+    env.USERPROFILE ??= home;
+    env.APPDATA ??= join(home, 'AppData', 'Roaming');
+    env.LOCALAPPDATA ??= join(home, 'AppData', 'Local');
+  } else {
+    env.HOME ??= home;
+  }
+  return env;
+}
+
 function exec(cli: string, args: string[], timeoutMs: number): Promise<string> {
   return new Promise((resolve, reject) => {
-    execFile(cli, args, { windowsHide: true, timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024 }, (err, stdout, stderr) => {
+    const opts = { windowsHide: true, timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024, env: cliEnv() };
+    execFile(cli, args, opts, (err, stdout, stderr) => {
       // The CLI reports failures as a JSON envelope on stdout even with a non-zero exit code.
       if (stdout.trim().startsWith('{')) return resolve(stdout);
       if (err) return reject(new OrcaError(stderr.trim() || err.message, 'exec_failed'));

@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, statSync, writeFileSync, mkdirSync } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { API_VERSION, dataDir, lockPath, matchWorktree, readLock, removeLock, resolveOrcaCli, writeLock, type OrcaTerminal, type OrcaWorktree } from './index.js';
+import { API_VERSION, cliEnv, dataDir, lockPath, matchWorktree, readLock, removeLock, resolveOrcaCli, writeLock, type OrcaTerminal, type OrcaWorktree } from './index.js';
 
 let dir: string;
 const saved = { ...process.env };
@@ -92,5 +92,23 @@ describe('matchWorktree', () => {
   });
   it('falls back to the name when the branch differs (e.g. detached HEAD)', () => {
     expect(matchWorktree({ displayName: 'app', branch: '', terminals: [] }, [a], [])).toEqual({ kind: 'found', worktree: a });
+  });
+});
+
+describe('cliEnv', () => {
+  it('completes the minimal environment a plugin worker gets (Windows)', () => {
+    const env = cliEnv({ PATH: 'p', SystemRoot: 'sysroot', ELECTRON_RUN_AS_NODE: '1' }, 'win32', 'home');
+    expect(env.USERPROFILE).toBe('home');
+    expect(env.APPDATA).toBe(join('home', 'AppData', 'Roaming'));
+    expect(env.LOCALAPPDATA).toBe(join('home', 'AppData', 'Local'));
+    expect(env.PATH).toBe('p');
+    expect(env.ELECTRON_RUN_AS_NODE).toBeUndefined();
+  });
+  it('keeps values that are already set', () => {
+    const env = cliEnv({ USERPROFILE: 'X', APPDATA: 'Y', LOCALAPPDATA: 'Z' }, 'win32', 'H');
+    expect([env.USERPROFILE, env.APPDATA, env.LOCALAPPDATA]).toEqual(['X', 'Y', 'Z']);
+  });
+  it('sets HOME on POSIX', () => {
+    expect(cliEnv({ PATH: 'p' }, 'linux', '/home/u').HOME).toBe('/home/u');
   });
 });
