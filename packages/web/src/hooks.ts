@@ -119,6 +119,7 @@ export function useRepo(enabled: boolean): RepoState {
     let retry: ReturnType<typeof setTimeout> | undefined;
     let delay = 1000;
     let stopped = false;
+    let wasDisconnected = false;
     // EventSource reconnects by itself after a network drop, but gives up for good on an HTTP error (e.g. the
     // server answered 404 while still starting): reconnect manually with a growing delay in that case.
     const connect = () => {
@@ -126,8 +127,14 @@ export function useRepo(enabled: boolean): RepoState {
       es.onopen = () => {
         delay = 1000;
         setConnected(true);
+        // the server may have restarted (or refs changed) while we were disconnected
+        if (wasDisconnected) {
+          wasDisconnected = false;
+          void reload();
+        }
       };
       es.onerror = () => {
+        wasDisconnected = true;
         setConnected(false);
         if (es && es.readyState === EventSource.CLOSED && !stopped) {
           es.close();

@@ -172,6 +172,8 @@ export interface OrcaTab {
   url: string;
   title: string;
   active: boolean;
+  /** Set when the page failed to load (e.g. the server it pointed to was not running) */
+  loadError?: string | null;
 }
 
 // `id:` / `path:` selectors are explicit; `active`/`current` resolve from the shell cwd and fail from a worker.

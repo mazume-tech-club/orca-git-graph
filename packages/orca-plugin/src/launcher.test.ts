@@ -119,6 +119,15 @@ describe('openGitGraph', () => {
   });
 });
 
+describe('tabs that failed to load', () => {
+  it('reloads a tab with a load error even when its URL is already current', async () => {
+    const url = buildUrl(4000, 'tok', wt().id);
+    const d = makeDeps({}, [{ browserPageId: 'p1', url, title: '', active: false, loadError: 'ERR_CONNECTION_REFUSED' }]);
+    expect(await openGitGraph(d)).toMatchObject({ ok: true, action: 'navigated' });
+    expect(d.calls).toEqual(['switch p1', `navigate p1 ${url}`]);
+  });
+});
+
 describe('findExistingTab', () => {
   it('requires loopback host, matching repo and a token', () => {
     const tab = (url: string): OrcaTab => ({ browserPageId: 'p', url, title: '', active: false });

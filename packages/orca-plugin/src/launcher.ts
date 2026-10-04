@@ -190,7 +190,8 @@ export async function openWorktree(
       const existing = findExistingTab(await d.orca.listTabs(cli, wt.id), wt.id);
       if (existing) {
         await d.orca.switchTab(cli, wt.id, existing.browserPageId);
-        if (existing.url === url) return { ok: true, action: 'switched', url };
+        // a tab that shows a load error (its server was gone) is reloaded even though the URL is the same
+        if (existing.url === url && !existing.loadError) return { ok: true, action: 'switched', url };
         // the server restarted since this tab was opened: point it at the new port / token
         await d.orca.navigateTab(cli, wt.id, existing.browserPageId, url);
         return { ok: true, action: 'navigated', url };

@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, statSync, writeFileSync, mkdirSync } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { API_VERSION, cliEnv, dataDir, lockPath, matchWorktree, readLock, removeLock, resolveOrcaCli, writeLock, type OrcaTerminal, type OrcaWorktree } from './index.js';
+import { API_VERSION, cliEnv, dataDir, identityPath, loadIdentity, saveIdentity, lockPath, matchWorktree, readLock, removeLock, resolveOrcaCli, writeLock, type OrcaTerminal, type OrcaWorktree } from './index.js';
 
 let dir: string;
 const saved = { ...process.env };
@@ -110,5 +110,25 @@ describe('cliEnv', () => {
   });
   it('sets HOME on POSIX', () => {
     expect(cliEnv({ PATH: 'p' }, 'linux', '/home/u').HOME).toBe('/home/u');
+  });
+});
+
+describe('identity', () => {
+  it('creates a token once and returns the same one afterwards', async () => {
+    const a = await loadIdentity();
+    expect(a.token.length).toBeGreaterThanOrEqual(24);
+    expect(a.port).toBeNull();
+    expect((await loadIdentity()).token).toBe(a.token);
+    await saveIdentity({ token: a.token, port: 4321 });
+    expect(await loadIdentity()).toEqual({ token: a.token, port: 4321 });
+  });
+  it('replaces a corrupt file', async () => {
+    mkdirSync(dataDir(), { recursive: true });
+    writeFileSync(identityPath(), 'garbage');
+    expect((await loadIdentity()).token.length).toBeGreaterThanOrEqual(24);
+  });
+  it.skipIf(process.platform === 'win32')('is private to the user on POSIX', async () => {
+    await loadIdentity();
+    expect(statSync(identityPath()).mode & 0o077).toBe(0);
   });
 });

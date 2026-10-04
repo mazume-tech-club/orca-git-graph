@@ -24,6 +24,45 @@ afterEach(() => {
   repo.cleanup();
 });
 
+describe('identity across restarts (Orca-launched server)', () => {
+  it('keeps token and port, so an open tab survives a restart', async () => {
+    const a = await startServer({ repos: [repo.dir], writeLockFile: true });
+    const { token, port } = a;
+    await a.close();
+    const b = await startServer({ repos: [repo.dir], writeLockFile: true });
+    expect(b.token).toBe(token);
+    expect(b.port).toBe(port);
+    const res = await fetch(`http://127.0.0.1:${b.port}/api/health?token=${token}`);
+    expect(res.status).toBe(200);
+    await b.close();
+  });
+
+  it('falls back to another port when the remembered one is taken, keeping the token', async () => {
+    const a = await startServer({ repos: [repo.dir], writeLockFile: true });
+    const { token, port } = a;
+    await a.close();
+    const { createServer } = await import('node:net');
+    const blocker = createServer();
+    await new Promise<void>((r) => blocker.listen(port, '127.0.0.1', r));
+    try {
+      const b = await startServer({ repos: [repo.dir], writeLockFile: true });
+      expect(b.port).not.toBe(port);
+      expect(b.token).toBe(token);
+      await b.close();
+    } finally {
+      await new Promise((r) => blocker.close(r));
+    }
+  });
+
+  it('standalone runs do not persist anything: fresh token every time', async () => {
+    const a = await startServer({ repos: [repo.dir] });
+    const b = await startServer({ repos: [repo.dir] });
+    expect(a.token).not.toBe(b.token);
+    await a.close();
+    await b.close();
+  });
+});
+
 describe('server lifecycle', () => {
   it('publishes port and token in the lock file and removes it on close', async () => {
     const s = await startServer({ repos: [repo.dir], writeLockFile: true });

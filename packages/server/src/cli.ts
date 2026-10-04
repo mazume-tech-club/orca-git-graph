@@ -9,7 +9,7 @@ import { HttpError } from './repo.js';
 const USAGE = `orca-git-graph server  (works without Orca: run it inside a repository and open the printed URL)
 
   --repo <path>        repository to show (repeatable; default: the current directory)
-  --open               open the graph in your default browser
+  --open / --no-open   open the graph in your default browser (default: open when started from a terminal without --lock/--orca)
   --port <n>           listen port on 127.0.0.1 (default: random)
   --token <t>          fixed token (dev only; random by default)
   --web-dir <dir>      built web UI to serve (default: ../web/dist next to this file, if present)
@@ -24,6 +24,7 @@ async function main(): Promise<void> {
     options: {
       repo: { type: 'string', multiple: true },
       open: { type: 'boolean' },
+      'no-open': { type: 'boolean' },
       port: { type: 'string' },
       token: { type: 'string' },
       'web-dir': { type: 'string' },
@@ -78,7 +79,9 @@ async function main(): Promise<void> {
     process.stdout.write(`${r.name}: http://127.0.0.1:${server.port}/?repo=${encodeURIComponent(r.id)}&token=${server.token}\n`);
   }
 
-  if (values.open && server.repos[0]) {
+  // a person running it in a terminal wants the browser; the Orca launcher (--lock / --orca) and scripts do not
+  const openBrowser = values['no-open'] ? false : (values.open ?? (!values.lock && !values.orca && process.stdout.isTTY === true));
+  if (openBrowser && server.repos[0]) {
     openInBrowser(`http://127.0.0.1:${server.port}/?repo=${encodeURIComponent(server.repos[0].id)}&token=${server.token}`);
   }
 

@@ -6,9 +6,11 @@ import {
   API_VERSION,
   isServerAlive,
   listWorktrees,
+  loadIdentity,
   readLock,
   removeLock,
   resolveOrcaCli,
+  saveIdentity,
   writeLock,
   type LockInfo,
 } from '@orca-git-graph/platform';
@@ -58,7 +60,11 @@ export async function startServer(opts: ServerOptions): Promise<RunningServer> {
     if (existing && (await isServerAlive(existing))) throw new AlreadyRunningError(existing);
   }
 
-  const token = opts.token ?? randomBytes(24).toString('base64url');
+  // Launched by the Orca plugin (lock mode): keep token and port across restarts so an open tab stays valid.
+  // Standalone runs get a fresh random token every time.
+  const identity = opts.writeLockFile && !opts.token ? await loadIdentity() : null;
+  const token = opts.token ?? identity?.token ?? randomBytes(24).toString('base64url');
+  const preferredPort = opts.port || identity?.port || 0; // 0 / unset = no explicit choice
   let provider: WorktreeProvider | null = opts.worktreeProvider ?? null;
   if (!provider && opts.orca) {
     const cli = resolveOrcaCli(opts.orcaCliSetting);
@@ -86,11 +92,21 @@ export async function startServer(opts: ServerOptions): Promise<RunningServer> {
     },
   });
 
-  const server = await new Promise<ReturnType<typeof serve>>((resolve, reject) => {
-    const s = serve({ fetch: app.fetch, port: opts.port ?? 0, hostname: HOST }, () => resolve(s));
-    s.once('error', reject);
-  });
+  const listen = (wanted: number) =>
+    new Promise<ReturnType<typeof serve>>((resolve, reject) => {
+      const s = serve({ fetch: app.fetch, port: wanted, hostname: HOST }, () => resolve(s));
+      s.once('error', reject);
+    });
+  let server: ReturnType<typeof serve>;
+  try {
+    server = await listen(preferredPort);
+  } catch (e) {
+    // the remembered port is taken by something else: any free port will do (open tabs then need a new URL)
+    if (preferredPort === 0 || (e as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw e;
+    server = await listen(0);
+  }
   port = (server.address() as AddressInfo).port;
+  if (identity) await saveIdentity({ token: identity.token, port }).catch(() => undefined);
 
   if (opts.writeLockFile) {
     await writeLock({ port, token, pid: process.pid, startedAt: Date.now(), apiVersion: API_VERSION });
