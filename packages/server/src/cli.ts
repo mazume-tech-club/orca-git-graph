@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -5,9 +6,10 @@ import { parseArgs } from 'node:util';
 import { AlreadyRunningError, startServer } from './server.js';
 import { HttpError } from './repo.js';
 
-const USAGE = `orca-git-graph server
+const USAGE = `orca-git-graph server  (works without Orca: run it inside a repository and open the printed URL)
 
-  --repo <path>        repository to show (repeatable)
+  --repo <path>        repository to show (repeatable; default: the current directory)
+  --open               open the graph in your default browser
   --port <n>           listen port on 127.0.0.1 (default: random)
   --token <t>          fixed token (dev only; random by default)
   --web-dir <dir>      built web UI to serve (default: ../web/dist next to this file, if present)
@@ -21,6 +23,7 @@ async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       repo: { type: 'string', multiple: true },
+      open: { type: 'boolean' },
       port: { type: 'string' },
       token: { type: 'string' },
       'web-dir': { type: 'string' },
@@ -41,10 +44,13 @@ async function main(): Promise<void> {
   const webDir = values['web-dir'] ? resolve(values['web-dir']) : defaultWeb;
   const idleMin = values['idle-minutes'] ? Number(values['idle-minutes']) : 0;
 
+  // Standalone use: with nothing else specified, show the repository in the current directory.
+  const repos = values.repo?.length ? values.repo : values.lock || values.orca ? [] : [process.cwd()];
+
   let server;
   try {
     server = await startServer({
-      repos: values.repo ?? [],
+      repos: repos,
       port: values.port ? Number(values.port) : 0,
       token: values.token,
       webDir,
@@ -72,10 +78,21 @@ async function main(): Promise<void> {
     process.stdout.write(`${r.name}: http://127.0.0.1:${server.port}/?repo=${encodeURIComponent(r.id)}&token=${server.token}\n`);
   }
 
+  if (values.open && server.repos[0]) {
+    openInBrowser(`http://127.0.0.1:${server.port}/?repo=${encodeURIComponent(server.repos[0].id)}&token=${server.token}`);
+  }
+
   const stop = () => void server.close().then(() => process.exit(0));
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
   await server.closed;
+}
+
+/** Open a URL in the default browser without a shell (the URL is never interpreted by one). */
+function openInBrowser(url: string): void {
+  const [cmd, args]: [string, string[]] =
+    process.platform === 'win32' ? ['rundll32', ['url.dll,FileProtocolHandler', url]] : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
+  execFile(cmd, args, { windowsHide: true }, () => undefined).on('error', () => undefined);
 }
 
 main().catch((e) => {
