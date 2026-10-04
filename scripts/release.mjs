@@ -5,7 +5,7 @@
 // so the ref it points at must contain orca-plugin.json + worker.mjs + server.mjs + web/ at its root.
 // That is a different tree from this source repository, so it is published on its own branch/tag.
 //
-//   node scripts/release.mjs                          build, create ./release (one commit, tag v<version>)
+//   node scripts/release.mjs                          build, create ./release (one commit, tag plugin-v<version>)
 //   node scripts/release.mjs --remote <git-url> --push   also force-push branch `plugin-dist` and the tag
 //
 // Nothing is pushed unless --push is given.
@@ -36,7 +36,8 @@ for (const f of ['orca-plugin.json', 'worker.mjs', 'server.mjs', join('web', 'in
   if (!existsSync(join(dist, f))) throw new Error(`missing ${f} in ${dist}; run pnpm build`);
 }
 const manifest = JSON.parse(await readFile(join(dist, 'orca-plugin.json'), 'utf8'));
-const tag = opt('--tag', `v${manifest.version}`);
+// not plain v<version>: that name stays free for tagging the source tree of this repository
+const tag = opt('--tag', `plugin-v${manifest.version}`);
 
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });

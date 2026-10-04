@@ -2,9 +2,24 @@
 
 [日本語](README.ja.md)
 
-A Git commit graph for [Orca](https://github.com/stablyai/orca), opened as a **tab in the editor area**. Built for people who think visually: the whole repository on one screen, and the difference between any two branches, remotes or tags at a glance.
+**See every branch, remote and tag — and exactly what separates any two of them — on one screen.**
 
-![Compare main with origin/main](docs/images/compare-en-dark.png)
+![Comparing main with origin/main, then a tag with a branch](docs/images/demo-compare-en.gif)
+
+A visual Git commit graph that works **inside [Orca](https://github.com/stablyai/orca) as an editor tab, or on its own in any browser — no Orca required.** It is read-only, runs entirely on your machine, and needs nothing but Node.js and `git`.
+
+## Two ways to use it
+
+**Standalone — any repository, any browser, no Orca:**
+
+```sh
+git clone --depth 1 --branch plugin-dist https://github.com/mazume-tech-club/orca-git-graph.git ~/orca-git-graph
+cd /path/to/your/repo
+node ~/orca-git-graph/server.mjs --open
+```
+
+**As an Orca plugin — one shortcut, opens as a tab in the focused worktree:**
+Orca → *Settings → Plugins → Install from Git URL* → URL `https://github.com/mazume-tech-club/orca-git-graph`, Ref `plugin-dist` (details [below](#install-as-an-orca-plugin)).
 
 ## What you get
 
@@ -18,7 +33,7 @@ A Git commit graph for [Orca](https://github.com/stablyai/orca), opened as a **t
 ## Install (as an Orca plugin)
 
 1. Orca → **Settings → Plugins → Install from Git URL**
-2. URL: `https://github.com/mazume-tech-club/orca-git-graph`, Ref: `plugin-dist` (or a release tag such as `v0.1.0`)
+2. URL: `https://github.com/mazume-tech-club/orca-git-graph`, Ref: `plugin-dist` (or a release tag such as `plugin-v0.1.0`)
 3. Approve the two capabilities it asks for: *read the focused worktree's name/branch* and *show notifications*.
 4. Run **Open Git Graph** from the command palette, or press **Ctrl/Cmd + Alt + Shift + O**.
 
@@ -36,15 +51,22 @@ Local worktrees only. For SSH / remote Orca workspaces a message explains why no
 
 ## Run without Orca
 
+From the release tree (no build step):
+
 ```sh
-pnpm install
-pnpm dev -- --repo /path/to/repo     # prints a URL; hot reload
-# or a production-style run:
-pnpm build
-node packages/server/dist/server.mjs --repo /path/to/repo --web-dir packages/web/dist
+git clone --depth 1 --branch plugin-dist https://github.com/mazume-tech-club/orca-git-graph.git ~/orca-git-graph
+cd /path/to/your/repo
+node ~/orca-git-graph/server.mjs --open      # opens your browser; Ctrl+C to stop
 ```
 
-Requires Node.js 20+ and `git` on `PATH`.
+`--repo <path>` (repeatable) shows other repositories, and without `--open` it just prints the URL. From source, with hot reload:
+
+```sh
+pnpm install
+pnpm dev -- --repo /path/to/repo
+```
+
+Requires Node.js 20+ and `git` on `PATH`. The server binds to `127.0.0.1` only, with a random token per run.
 
 ## Keyboard
 

@@ -43,4 +43,8 @@ await writeFile(join(out, 'orca-plugin.json'), JSON.stringify(manifest, null, 2)
 for (const f of ['README.md', 'README.ja.md', 'LICENSE']) {
   if (existsSync(join(root, f))) await cp(join(root, f), join(out, f));
 }
+// the README in the release branch shows the demo GIFs
+for (const f of ['demo-compare-en.gif', 'demo-compare-ja.gif']) {
+  if (existsSync(join(root, 'docs', 'images', f))) await cp(join(root, 'docs', 'images', f), join(out, 'docs', 'images', f));
+}
 console.log(`plugin built: ${out}`);

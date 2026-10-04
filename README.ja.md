@@ -2,9 +2,24 @@
 
 [English](README.md)
 
-[Orca](https://github.com/stablyai/orca) の**エディタ領域のタブ**として開く Git コミットグラフです。「一画面で全体が分かる」「ブランチやリモートとの差分がひと目で分かる」ことを最優先にしています。
+**全ブランチ・リモート・タグと、任意の 2 つの間の差分を、一画面で。**
 
-![main と origin/main の比較](docs/images/compare-ja-dark.png)
+![main と origin/main の比較、タグとブランチの比較](docs/images/demo-compare-ja.gif)
+
+Git のコミットグラフを視覚的に見るツールです。**[Orca](https://github.com/stablyai/orca) のエディタタブとして、または Orca なしでも通常のブラウザ単体で**動きます。読み取り専用で、すべてあなたのマシン上で動作し、必要なのは Node.js と `git` だけです。
+
+## 2 通りの使い方
+
+**単体（Orca 不要。どのリポジトリでも、どのブラウザでも）:**
+
+```sh
+git clone --depth 1 --branch plugin-dist https://github.com/mazume-tech-club/orca-git-graph.git ~/orca-git-graph
+cd /path/to/your/repo
+node ~/orca-git-graph/server.mjs --open
+```
+
+**Orca プラグインとして（ショートカット 1 つで、フォーカス中のワークツリーにタブで開く）:**
+Orca の *Settings → Plugins → Install from Git URL* に、URL `https://github.com/mazume-tech-club/orca-git-graph`、Ref `plugin-dist` を入力します（詳細は[下記](#インストールorca-プラグインとして)）。
 
 ## できること
 
@@ -18,7 +33,7 @@
 ## インストール（Orca プラグインとして）
 
 1. Orca の **Settings → Plugins → Install from Git URL**
-2. URL: `https://github.com/mazume-tech-club/orca-git-graph`、Ref: `plugin-dist`（または `v0.1.0` などのリリースタグ）
+2. URL: `https://github.com/mazume-tech-club/orca-git-graph`、Ref: `plugin-dist`（または `plugin-v0.1.0` などのリリースタグ）
 3. 要求される 2 つの権限を許可: 「フォーカス中のワークツリーの名前・ブランチの読み取り」と「通知の表示」
 4. コマンドパレットから **Open Git Graph** を実行、またはショートカット **Ctrl/Cmd + Alt + Shift + O**
 
@@ -36,15 +51,22 @@ node <プラグインのフォルダ>/open.mjs
 
 ## Orca なしで使う
 
+配布用ツリーから（ビルド不要）:
+
 ```sh
-pnpm install
-pnpm dev -- --repo C:\path\to\repo    # URL が表示されます（ホットリロード）
-# 本番相当の起動:
-pnpm build
-node packages/server/dist/server.mjs --repo C:\path\to\repo --web-dir packages/web/dist
+git clone --depth 1 --branch plugin-dist https://github.com/mazume-tech-club/orca-git-graph.git ~/orca-git-graph
+cd /path/to/your/repo
+node ~/orca-git-graph/server.mjs --open      # ブラウザが開きます。Ctrl+C で終了
 ```
 
-Node.js 20 以上と、`PATH` 上の `git` が必要です。
+`--repo <path>`（複数指定可）で別のリポジトリも表示できます。`--open` を付けない場合は URL を表示するだけです。ソースから（ホットリロードあり）:
+
+```sh
+pnpm install
+pnpm dev -- --repo /path/to/repo
+```
+
+Node.js 20 以上と `git` が必要です。サーバーは `127.0.0.1` だけで待ち受け、起動ごとにランダムなトークンを使います。
 
 ## キーボード操作
 

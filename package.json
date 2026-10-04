@@ -16,5 +16,8 @@
     "release": "node scripts/release.mjs",
     "plugin:harness": "node packages/orca-plugin/scripts/host-harness.mjs"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "gifenc": "^1.0.3",
+    "pngjs": "^7.0.0"
+  }
 }
