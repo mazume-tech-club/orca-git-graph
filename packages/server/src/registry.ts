@@ -27,6 +27,8 @@ export class RepoRegistry {
   private handles = new Map<string, RepoHandle>();
   private orcaWorktrees = new Map<string, OrcaWorktree>();
   private lastOrcaRefresh = 0;
+  private refreshing: Promise<void> | null = null;
+  private opening = new Map<string, Promise<RepoHandle>>();
 
   constructor(private readonly provider: WorktreeProvider | null = null) {}
 
@@ -41,19 +43,42 @@ export class RepoRegistry {
     return id;
   }
 
-  private async refreshOrca(force = false): Promise<void> {
-    if (!this.provider) return;
-    if (!force && Date.now() - this.lastOrcaRefresh < ORCA_REFRESH_MIN_INTERVAL_MS) return;
-    this.lastOrcaRefresh = Date.now();
-    try {
-      const list = await this.provider();
-      this.orcaWorktrees = new Map(list.map((w) => [w.id, w]));
-    } catch {
-      /* Orca not reachable: keep the previous list */
-    }
+  /**
+   * Re-read Orca's worktree list. Concurrent callers share one run: a page load fires several requests at once,
+   * and a caller that returned early (rate limit) would see an empty list and answer 404 for a valid repository.
+   */
+  private refreshOrca(): Promise<void> {
+    if (!this.provider) return Promise.resolve();
+    if (this.refreshing) return this.refreshing;
+    if (Date.now() - this.lastOrcaRefresh < ORCA_REFRESH_MIN_INTERVAL_MS) return Promise.resolve();
+    const provider = this.provider;
+    this.refreshing = (async () => {
+      try {
+        const list = await provider();
+        this.orcaWorktrees = new Map(list.map((w) => [w.id, w]));
+      } catch {
+        /* Orca not reachable: keep the previous list */
+      } finally {
+        this.lastOrcaRefresh = Date.now();
+        this.refreshing = null;
+      }
+    })();
+    return this.refreshing;
   }
 
-  async get(id: string): Promise<RepoHandle> {
+  /** One handle (and one watcher) per repository, even when several requests ask at the same time. */
+  get(id: string): Promise<RepoHandle> {
+    let p = this.opening.get(id);
+    if (!p) {
+      p = this.open(id);
+      this.opening.set(id, p);
+      // a failure (unknown id, not a repository) must not be cached
+      p.catch(() => this.opening.delete(id));
+    }
+    return p;
+  }
+
+  private async open(id: string): Promise<RepoHandle> {
     const existing = this.handles.get(id);
     if (existing) return existing;
 

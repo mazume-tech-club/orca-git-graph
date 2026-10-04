@@ -115,18 +115,41 @@ export function useRepo(enabled: boolean): RepoState {
   useEffect(() => {
     if (!enabled) return;
     void reload();
-    const es = new EventSource(eventsUrl());
-    es.onopen = () => setConnected(true);
-    es.onerror = () => setConnected(false);
-    es.onmessage = (ev) => {
-      try {
-        const msg = JSON.parse(ev.data as string) as { type: string };
-        if (msg.type === 'refs' || msg.type === 'status') void reload();
-      } catch {
-        /* ignore malformed event */
-      }
+    let es: EventSource | null = null;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let delay = 1000;
+    let stopped = false;
+    // EventSource reconnects by itself after a network drop, but gives up for good on an HTTP error (e.g. the
+    // server answered 404 while still starting): reconnect manually with a growing delay in that case.
+    const connect = () => {
+      es = new EventSource(eventsUrl());
+      es.onopen = () => {
+        delay = 1000;
+        setConnected(true);
+      };
+      es.onerror = () => {
+        setConnected(false);
+        if (es && es.readyState === EventSource.CLOSED && !stopped) {
+          es.close();
+          retry = setTimeout(connect, delay);
+          delay = Math.min(delay * 2, 15_000);
+        }
+      };
+      es.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data as string) as { type: string };
+          if (msg.type === 'refs' || msg.type === 'status') void reload();
+        } catch {
+          /* ignore malformed event */
+        }
+      };
     };
-    return () => es.close();
+    connect();
+    return () => {
+      stopped = true;
+      clearTimeout(retry);
+      es?.close();
+    };
   }, [enabled, reload]);
 
   return { info, error, connected, reload };
