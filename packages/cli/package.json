@@ -1,0 +1,14 @@
+{
+  "name": "@orca-git-graph/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "@orca-git-graph/server": "workspace:*",
+    "@orca-git-graph/web": "workspace:*",
+    "esbuild": "^0.28.2"
+  }
+}

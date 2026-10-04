@@ -98,6 +98,7 @@ Orca（stablyai/orca）で、Git のコミットグラフを**エディタ領域
 - `repo` パラメータは任意のパスを受け付けない。`orca worktree ps` で得たワークツリー、または起動時に指定したパスの許可リストに含まれるものだけ扱う
 - 既定は読み取り専用。`git fetch` は UI の明示的なボタン操作時のみ実行する
 - ロックファイル（port/token）はユーザーのデータディレクトリに置き、他ユーザーから読めない権限にする
+- **例外（意図的な変更）**: Orca プラグインが起動するサーバー（`--lock`）に限り、トークンとポートを `identity.json`（ロックファイルと同じ権限）に保存して再起動後も引き継ぐ。開いているタブが再起動後も生きるようにするため。単体起動（`--lock` なし）は従来どおり起動ごとにランダムなトークン。ポートが使用中なら別ポートにフォールバック（その場合は新しい URL が必要）
 
 ## よく使うコマンド
 
@@ -115,6 +116,7 @@ node scripts/make-large-repo.mjs <dir> 10000
 node scripts/screenshots.mjs           # docs/images を再生成
 node packages/orca-plugin/scripts/host-harness.mjs   # 起動中の Orca でプラグインを通し確認（実際にタブが開く）
 node scripts/release.mjs               # 配布用ツリー（Git URL インストール用）を release/ に作る
+# pnpm build は packages/cli/dist に npm パッケージ（orca-git-graph。bin: orca-git-graph / git-graph）も作る。公開手順は docs/PUBLISHING.md
 ```
 
 ## 完了の定義（各フェーズ共通）

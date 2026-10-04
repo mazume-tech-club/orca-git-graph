@@ -15,7 +15,7 @@ A visual Git commit graph that works **inside [Orca](https://github.com/stablyai
 ```sh
 git clone --depth 1 --branch plugin-dist https://github.com/mazume-tech-club/orca-git-graph.git ~/orca-git-graph
 cd /path/to/your/repo
-node ~/orca-git-graph/server.mjs --open
+node ~/orca-git-graph/server.mjs
 ```
 
 **As an Orca plugin — one shortcut, opens as a tab in the focused worktree:**
@@ -56,10 +56,10 @@ From the release tree (no build step):
 ```sh
 git clone --depth 1 --branch plugin-dist https://github.com/mazume-tech-club/orca-git-graph.git ~/orca-git-graph
 cd /path/to/your/repo
-node ~/orca-git-graph/server.mjs --open      # opens your browser; Ctrl+C to stop
+node ~/orca-git-graph/server.mjs           # opens your browser; Ctrl+C to stop
 ```
 
-`--repo <path>` (repeatable) shows other repositories, and without `--open` it just prints the URL. From source, with hot reload:
+`--repo <path>` (repeatable) shows other repositories; `--no-open` only prints the URL. From source, with hot reload:
 
 ```sh
 pnpm install

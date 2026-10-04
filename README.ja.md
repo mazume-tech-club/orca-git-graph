@@ -15,7 +15,7 @@ Git のコミットグラフを視覚的に見るツールです。**[Orca](http
 ```sh
 git clone --depth 1 --branch plugin-dist https://github.com/mazume-tech-club/orca-git-graph.git ~/orca-git-graph
 cd /path/to/your/repo
-node ~/orca-git-graph/server.mjs --open
+node ~/orca-git-graph/server.mjs
 ```
 
 **Orca プラグインとして（ショートカット 1 つで、フォーカス中のワークツリーにタブで開く）:**
@@ -56,10 +56,10 @@ node <プラグインのフォルダ>/open.mjs
 ```sh
 git clone --depth 1 --branch plugin-dist https://github.com/mazume-tech-club/orca-git-graph.git ~/orca-git-graph
 cd /path/to/your/repo
-node ~/orca-git-graph/server.mjs --open      # ブラウザが開きます。Ctrl+C で終了
+node ~/orca-git-graph/server.mjs           # ブラウザが開きます。Ctrl+C で終了
 ```
 
-`--repo <path>`（複数指定可）で別のリポジトリも表示できます。`--open` を付けない場合は URL を表示するだけです。ソースから（ホットリロードあり）:
+`--repo <path>`（複数指定可）で別のリポジトリも表示できます。`--no-open` を付けると URL を表示するだけにできます。ソースから（ホットリロードあり）:
 
 ```sh
 pnpm install

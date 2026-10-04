@@ -173,6 +173,18 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0
 
+  packages/cli:
+    devDependencies:
+      '@orca-git-graph/server':
+        specifier: workspace:*
+        version: link:../server
+      '@orca-git-graph/web':
+        specifier: workspace:*
+        version: link:../web
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
+
   packages/core:
     devDependencies:
       '@types/node':

@@ -28,6 +28,28 @@ Install, as users see it (Orca → Settings → Plugins → Install from Git URL
 Before the first release: check `packages/orca-plugin/orca-plugin.json` (`publisher`, `repository`, `version`), run
 `pnpm test && pnpm test:e2e`, and try the built plugin once in Orca (`packages/orca-plugin/dist` via Settings → Plugins → Development).
 
+## 1b. Publish the npm package (standalone use: `npx orca-git-graph` / `git graph`)
+
+`pnpm build` also produces the npm package in `packages/cli/dist` (the bundled server with a shebang, the web UI, and
+two bins: `orca-git-graph` and `git-graph`, so that `git graph` works as a Git subcommand once it is on `PATH`).
+The name `orca-git-graph` was free on the registry when this was written (check again before publishing).
+
+```sh
+pnpm build
+cd packages/cli/dist
+npm pack --dry-run          # check the file list (server.mjs, web/, docs/, README.md, LICENSE, package.json)
+npm publish                 # needs `npm login`; the version comes from packages/cli/package.json
+```
+
+Check a built package without publishing: `npm pack`, then `npm install -g --prefix <tmp> ./orca-git-graph-0.1.0.tgz`.
+
+Once published, add this to the top of the README (it is intentionally not there yet, because it would not work):
+
+```sh
+npx orca-git-graph                    # inside any repository: opens your browser
+npm i -g orca-git-graph && git graph  # or install once and use it as a Git subcommand
+```
+
 ## 2. Get listed in Orca's plugin marketplace
 
 The official index is the file `orca-marketplace.json` in the `stablyai/orca-plugins` repository; an entry is added by
@@ -79,6 +101,11 @@ Post these yourself, and look at the community rules first. Use the GIF from `do
 >
 > It is read-only apart from an explicit Fetch button, binds to 127.0.0.1 only with a random token per run, and runs git via `execFile`.
 > Feedback welcome, especially on macOS / Linux, which I have not been able to test.
+
+## 3b. Orca feature request
+
+`docs/ORCA-FEATURE-REQUEST.md` is a ready-to-file draft for `stablyai/orca` (plugin buttons, shortcuts that work in
+terminals, worktree passed to commands, and the slow no-tab `orca tab list` / minimal worker environment findings).
 
 ## 4. Things to say honestly
 
