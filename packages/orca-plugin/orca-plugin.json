@@ -1,0 +1,17 @@
+{
+  "manifestVersion": 1,
+  "id": "git-graph",
+  "publisher": "git-graph-dev",
+  "name": "Git Graph",
+  "version": "0.1.0",
+  "description": "Open the whole repository's commit graph in an editor tab: all branches, remotes and tags, with ahead/behind comparison between any two refs.",
+  "repository": "https://github.com/OWNER/orca-git-graph",
+  "engines": { "orca": ">=1.4.0" },
+  "pluginApi": 1,
+  "main": "worker.mjs",
+  "contributes": {
+    "commands": [{ "id": "open-git-graph", "title": "Open Git Graph", "context": "worktree" }],
+    "keybindings": [{ "command": "open-git-graph", "key": "Mod+Alt+Shift+O", "when": "worktree" }]
+  },
+  "capabilities": [{ "kind": "workspace:read" }, { "kind": "notifications:show" }]
+}

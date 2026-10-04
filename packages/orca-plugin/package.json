@@ -1,0 +1,22 @@
+{
+  "name": "@orca-git-graph/orca-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@orca-git-graph/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "@orca-git-graph/server": "workspace:*",
+    "@orca-git-graph/web": "workspace:*",
+    "@types/node": "^20.19.43",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}
