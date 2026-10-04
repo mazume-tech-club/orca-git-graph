@@ -8,7 +8,7 @@
  */
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { currentWorktreeId, listWorktrees, resolveOrcaCli } from '@orca-git-graph/platform';
+import { countUiClients, currentWorktreeId, listWorktrees, resolveOrcaCli } from '@orca-git-graph/platform';
 import { openWorktree, realOrca } from './launcher.js';
 import { ensureServer } from './server-process.js';
 
@@ -41,6 +41,10 @@ async function main(): Promise<number> {
       resolveOrcaCli: () => cli,
       ensureServer: (orcaCli) =>
         ensureServer({ serverEntry: join(here, 'server.mjs'), webDir: join(here, 'web'), orcaCli, idleMinutes: 30, startTimeoutMs: 15_000 }),
+      hasOpenTab: async (server, worktreeId) => {
+        const n = await countUiClients(server, worktreeId);
+        return n === null ? null : n > 0;
+      },
       orca: realOrca,
       log: () => undefined,
     },

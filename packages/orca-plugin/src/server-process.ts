@@ -53,7 +53,7 @@ export async function ensureServer(opts: EnsureServerOptions, deps: ServerProces
 
   const deadline = deps.now() + opts.startTimeoutMs;
   while (deps.now() < deadline) {
-    await deps.sleep(150);
+    await deps.sleep(40);
     const lock = await deps.readLock();
     if (lock && (await deps.isAlive(lock))) return { port: lock.port, token: lock.token };
   }

@@ -260,6 +260,24 @@ describe('fetch', () => {
   });
 });
 
+describe('/api/clients', () => {
+  it('counts the pages connected for a repository', async () => {
+    const count = async () => (await get<{ count: number }>('/api/clients')).count;
+    expect(await count()).toBe(0);
+    const res = await fetch(url('/api/events'));
+    const reader = res.body!.getReader();
+    await reader.read(); // first event: the connection is registered
+    expect(await count()).toBe(1);
+    await reader.cancel();
+    const t0 = Date.now();
+    while ((await count()) !== 0 && Date.now() - t0 < 5000) await new Promise((r) => setTimeout(r, 100));
+    expect(await count()).toBe(0);
+  });
+  it('requires the token', async () => {
+    expect((await fetch(`http://127.0.0.1:${srv.port}/api/clients?repo=${repoId}`)).status).toBe(401);
+  });
+});
+
 describe('edge-case repositories', () => {
   it('handles an empty repository', async () => {
     const t = tempDir('empty');
@@ -302,6 +320,30 @@ describe('edge-case repositories', () => {
     const t = tempDir('plain');
     await expect(startServer({ repos: [t.dir] })).rejects.toMatchObject({ code: 'not_a_git_repo' });
     t.cleanup();
+  });
+});
+
+describe('orca worktrees (concurrent first requests)', () => {
+  it('answers every request of a page load, not just the first (the SSE connection used to get a 404)', async () => {
+    const t = tempDir('orca-conc');
+    initRepo(t.dir);
+    commit(t.dir, 'x');
+    const id = 'r1::' + t.dir;
+    const s = await startServer({
+      repos: [],
+      // a slow `orca worktree ps`, like the real CLI
+      worktreeProvider: async () => (await new Promise((r) => setTimeout(r, 400)), [{ id, repoId: 'r1', hostId: 'local', kind: 'git', displayName: 'x', branch: 'main', path: t.dir }]),
+    });
+    try {
+      const q = `repo=${encodeURIComponent(id)}&token=${s.token}`;
+      const urls = ['repo', 'log', 'clients', 'events'].map((p) => `http://127.0.0.1:${s.port}/api/${p}?${q}`);
+      const responses = await Promise.all(urls.map((u) => fetch(u)));
+      expect(responses.map((r) => r.status)).toEqual([200, 200, 200, 200]);
+      await responses[3]!.body!.cancel();
+    } finally {
+      await s.close();
+      t.cleanup();
+    }
   });
 });
 

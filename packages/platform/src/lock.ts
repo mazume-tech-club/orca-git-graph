@@ -65,3 +65,19 @@ export async function isServerAlive(lock: LockInfo, timeoutMs = 1500): Promise<b
     return false;
   }
 }
+
+/**
+ * How many Git Graph pages are connected to the server for this repository id (a page keeps a live-update
+ * connection open while it is loaded). `null` when the server could not be asked.
+ */
+export async function countUiClients(server: { port: number; token: string }, repoId: string, timeoutMs = 800): Promise<number | null> {
+  try {
+    const q = new URLSearchParams({ repo: repoId, token: server.token });
+    const res = await fetch(`http://127.0.0.1:${server.port}/api/clients?${q}`, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { count?: number };
+    return typeof body.count === 'number' ? body.count : null;
+  } catch {
+    return null;
+  }
+}

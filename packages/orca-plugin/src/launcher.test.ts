@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { OrcaTab, OrcaTerminal, OrcaWorktree, WorkspaceContext } from '@orca-git-graph/platform';
-import { buildUrl, findExistingTab, openGitGraph, type LauncherDeps } from './launcher.js';
+import { buildUrl, cacheKey, findExistingTab, openGitGraph, type LauncherDeps, type WorktreeCache } from './launcher.js';
 
 const wt = (over: Partial<OrcaWorktree> = {}): OrcaWorktree => ({
   id: 'repo1::C:\\work\\app',
@@ -83,11 +83,9 @@ describe('openGitGraph', () => {
     expect(d.notify).toHaveBeenCalledTimes(1);
   });
 
-  it('explains remote worktrees and does not start a server', async () => {
-    const ensureServer = vi.fn();
-    const d = makeDeps({ ensureServer, orca: { ...makeDeps().orca, listWorktrees: async () => [wt({ hostId: 'ssh-1' })] } });
+  it('explains remote worktrees', async () => {
+    const d = makeDeps({ orca: { ...makeDeps().orca, listWorktrees: async () => [wt({ hostId: 'ssh-1' })] } });
     expect(await openGitGraph(d)).toMatchObject({ ok: false, reason: 'remote' });
-    expect(ensureServer).not.toHaveBeenCalled();
   });
 
   it('rejects non-git workspaces', async () => {
@@ -128,5 +126,96 @@ describe('findExistingTab', () => {
     expect(findExistingTab([tab('http://127.0.0.1:1/?repo=a')], 'a')).toBeUndefined();
     expect(findExistingTab([tab('http://localhost:1/?repo=a&token=t')], 'a')).toBeUndefined();
     expect(findExistingTab([tab('not a url')], 'a')).toBeUndefined();
+  });
+});
+
+describe('latency optimisations', () => {
+  const ctx: WorkspaceContext = { branch: 'main', displayName: 'app', terminals: [{ id: 't1' }] };
+  const memCache = (): WorktreeCache & { store: Map<string, OrcaWorktree> } => {
+    const store = new Map<string, OrcaWorktree>();
+    return { store, get: async (k) => store.get(k) ?? null, set: async (k, w) => void store.set(k, w), delete: async (k) => void store.delete(k) };
+  };
+
+  it('starts the server before the worktree is known', async () => {
+    const order: string[] = [];
+    const d = makeDeps({
+      ensureServer: async () => (order.push('server'), { port: 4000, token: 'tok' }),
+      readContext: async () => (order.push('context'), ctx),
+    });
+    await openGitGraph(d);
+    expect(order).toEqual(['server', 'context']);
+  });
+
+  it('remembers the resolved worktree and skips worktree ps / terminal list next time', async () => {
+    const cache = memCache();
+    let slowCalls = 0;
+    const base = makeDeps();
+    const mk = () =>
+      makeDeps({
+        readContext: async () => ctx,
+        cache,
+        orca: {
+          ...base.orca,
+          listWorktrees: async () => (slowCalls++, [wt()]),
+          listTerminals: async () => (slowCalls++, [{ handle: 't1', ptyId: 'p', worktreeId: wt().id }]),
+        },
+      });
+    expect(await openGitGraph(mk())).toMatchObject({ ok: true });
+    expect(slowCalls).toBe(2);
+    expect(cache.store.get(cacheKey(ctx)!)).toMatchObject({ id: wt().id });
+    expect(await openGitGraph(mk())).toMatchObject({ ok: true, action: 'created' });
+    expect(slowCalls).toBe(2); // not called again
+  });
+
+  it('falls back to a full lookup when the remembered worktree is gone', async () => {
+    const cache = memCache();
+    cache.store.set(cacheKey(ctx)!, wt({ id: 'repo1::C:\gone' }));
+    const base = makeDeps();
+    const d = makeDeps({
+      readContext: async () => ctx,
+      cache,
+      orca: {
+        ...base.orca,
+        listTabs: async (_c, id) => (id.endsWith('gone') ? Promise.reject(new Error('selector_not_found')) : []),
+        listTerminals: async () => [{ handle: 't1', ptyId: 'p', worktreeId: wt().id }],
+      },
+    });
+    expect(await openGitGraph(d)).toMatchObject({ ok: true, action: 'created' });
+    expect(cache.store.get(cacheKey(ctx)!)).toMatchObject({ id: wt().id }); // corrected
+  });
+
+  it('does not use the cache without terminal ids (nothing specific to key on)', () => {
+    expect(cacheKey({ branch: 'main', displayName: 'app', terminals: [] })).toBeNull();
+  });
+});
+
+describe('avoiding the slow tab list', () => {
+  // with no browser tab open every `orca tab list` takes ~8 s; the launcher must not ask when the server says nothing is open
+  const listing = (tabs: OrcaTab[] = []) => {
+    const calls = { list: 0 };
+    const base = makeDeps();
+    return { calls, orca: { ...base.orca, listTabs: async () => (calls.list++, tabs) } };
+  };
+
+  it('creates the tab directly when no page is connected', async () => {
+    const l = listing();
+    const d = makeDeps({ hasOpenTab: async () => false, orca: l.orca });
+    expect(await openGitGraph(d)).toMatchObject({ ok: true, action: 'created' });
+    expect(l.calls.list).toBe(0);
+  });
+
+  it('looks for the existing tab when a page is connected', async () => {
+    const url = buildUrl(4000, 'tok', wt().id);
+    const l = listing([{ browserPageId: 'p1', url, title: '', active: false }]);
+    const d = makeDeps({ hasOpenTab: async () => true, orca: l.orca });
+    expect(await openGitGraph(d)).toMatchObject({ ok: true, action: 'switched' });
+    expect(l.calls.list).toBe(1);
+  });
+
+  it('falls back to the tab list when the server cannot say', async () => {
+    const l = listing();
+    const d = makeDeps({ hasOpenTab: async () => null, orca: l.orca });
+    await openGitGraph(d);
+    expect(l.calls.list).toBe(1);
   });
 });

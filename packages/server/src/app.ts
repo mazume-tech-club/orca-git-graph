@@ -49,6 +49,8 @@ function parseScope(refsParam: string | undefined, typesParam?: string): LogScop
 
 export function createApp(opts: AppOptions): Hono {
   const app = new Hono();
+  // open UI pages per repository (live-update connections); lets the Orca launcher know whether a tab is already open
+  const uiClients = new Map<string, number>();
 
   app.use('*', async (c, next) => {
     const host = c.req.header('host') ?? '';
@@ -161,28 +163,43 @@ export function createApp(opts: AppOptions): Hono {
     }
   });
 
+  app.get('/api/clients', (c) => c.json({ count: uiClients.get(c.req.query('repo') ?? '') ?? 0 }));
+
   app.get('/api/events', async (c) => {
     const h = await repoOf(c.req.query('repo'));
     return streamSSE(c, async (stream) => {
       opts.onSseCount(1);
+      uiClients.set(h.id, (uiClients.get(h.id) ?? 0) + 1);
       const unsubscribe = h.watcher.subscribe((type) => {
         void stream.writeSSE({ data: JSON.stringify({ type }) }).catch(() => undefined);
       });
+      // The connection is released the moment the client goes away (not after the next ping), because the
+      // client count tells the Orca launcher whether a tab is still open.
       let open = true;
-      stream.onAbort(() => {
+      let wake: () => void = () => undefined;
+      const release = () => {
+        if (!open) return;
         open = false;
-      });
+        unsubscribe();
+        uiClients.set(h.id, Math.max(0, (uiClients.get(h.id) ?? 1) - 1));
+        opts.onSseCount(-1);
+        wake();
+      };
+      stream.onAbort(release);
       await stream.writeSSE({ data: JSON.stringify({ type: 'ping' }) });
       while (open) {
-        await stream.sleep(20_000);
+        await new Promise<void>((resolve) => {
+          const t = setTimeout(resolve, 20_000);
+          wake = () => {
+            clearTimeout(t);
+            resolve();
+          };
+        });
         if (!open) break;
         opts.onActivity();
-        await stream.writeSSE({ data: JSON.stringify({ type: 'ping' }) }).catch(() => {
-          open = false;
-        });
+        await stream.writeSSE({ data: JSON.stringify({ type: 'ping' }) }).catch(release);
       }
-      unsubscribe();
-      opts.onSseCount(-1);
+      release();
     });
   });
 

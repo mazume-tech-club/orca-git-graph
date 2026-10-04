@@ -77,15 +77,23 @@ child.on('message', (m) => {
 const invoke = () =>
   new Promise((resolveInvoke) => {
     const callId = nextCall++;
-    pending.set(callId, resolveInvoke);
+    const t0 = performance.now();
+    pending.set(callId, (m) => {
+      console.log(`  (invoke ${callId} took ${Math.round(performance.now() - t0)} ms)`);
+      resolveInvoke(m);
+    });
     child.send({ type: 'invokeCommand', callId, commandId: 'open-git-graph' });
   });
 
+const tInit = performance.now();
 child.send({ type: 'init', pluginId: 'git-graph', pluginRoot, mainEntry: 'worker.mjs', grantedCapabilities: ['workspace:read', 'notifications:show'] });
 await ready;
+console.log(`  (worker start + activate took ${Math.round(performance.now() - tInit)} ms)`);
 
 const first = await invoke();
 console.log('first invoke ->', JSON.stringify(first));
+// give the opened page time to load and connect, like a person who clicks again a moment later
+await new Promise((r) => setTimeout(r, 2500));
 const second = await invoke();
 console.log('second invoke ->', JSON.stringify(second));
 

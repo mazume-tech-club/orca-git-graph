@@ -10,9 +10,10 @@
  */
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveOrcaCli, type WorkspaceContext } from '@orca-git-graph/platform';
+import { countUiClients, resolveOrcaCli, type WorkspaceContext } from '@orca-git-graph/platform';
 import { openGitGraph, realOrca } from './launcher.js';
 import { ensureServer } from './server-process.js';
+import { fileWorktreeCache } from './worktree-cache.js';
 
 interface PluginContext {
   commands: { register(id: string, handler: (args?: unknown) => unknown): void };
@@ -38,7 +39,12 @@ export default async function activate(ctx: PluginContext): Promise<void> {
           idleMinutes: 30,
           startTimeoutMs: 15_000,
         }),
+      hasOpenTab: async (server, id) => {
+        const n = await countUiClients(server, id);
+        return n === null ? null : n > 0;
+      },
       orca: realOrca,
+      cache: fileWorktreeCache(),
       log: (m) => ctx.log(m),
     });
     return result;

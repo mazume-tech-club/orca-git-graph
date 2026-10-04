@@ -53,6 +53,8 @@ Orca（stablyai/orca）で、Git のコミットグラフを**エディタ領域
 - `workspace.readContext` の戻り値は `{ branch, displayName, terminals: [{ id }] } | null`（ワークツリー id は含まれない）。突き合わせは **terminal の id を `orca terminal list` の `handle` / `ptyId` と照合**するのが最も確実。次に displayName + branch。同名が複数なら曖昧として通知する
 - `orca worktree ps --json` の要素: `worktreeId`（`<repoId>::<path>`）、`repoId`、`hostId`（`local` 以外はリモート）、`workspaceKind`（`git` 以外は Git リポジトリではない）、`displayName`、`branch`、`path`
 - `orca tab create` は同じ URL でも**毎回新しいタブを作る**。`orca tab list --worktree id:<id> --json` の `tabs[].url` / `title`（`<title>` が反映される）で既存タブを探し、`tab switch --page <id>`（URL が古ければ `goto --page <id> --url`）で再利用する
+- **ブラウザタブ系の CLI（`tab list` / `switch` / `show` / `current`）は、そのワークツリーにブラウザタブが 1 つも無いと毎回約 8.4 秒かかる**（Orca がブラウザブリッジを待つ）。`tab create` は 0.5 秒で終わる。タブがあるときは list 0.35 秒 / switch 0.7 秒。→ サーバーの `/api/clients`（画面が開いていれば SSE 接続が 1 以上）で「開いているか」を先に確認し、開いていなければ `tab list` を呼ばず直接 `tab create` する
+- `orca` CLI 1 回の起動は約 0.3〜0.4 秒。プラグインのワーカーは **USERPROFILE / APPDATA / LOCALAPPDATA の無い最小の環境変数**で起動され、そのままだと `orca` CLI が失敗する（`cliEnv()` で補う）
 - ワーカーから `detached: true, stdio: 'ignore'` で起動した子プロセスは、親（ワーカー）が終了しても生き残る（Windows で確認）
 - ワーカー内の `process.execPath` は Orca 本体の実行ファイル。`ELECTRON_RUN_AS_NODE=1` を付ければ素の Node（24.x）として動くので、ユーザーに Node は不要
 - Orca の Git URL インストールは `git clone --depth 1 --branch <ref>` したツリーを**そのまま**使う（ビルドしない）。ref のルートに `orca-plugin.json` とビルド済みの `worker.mjs` / `server.mjs` / `web/` が必要 → `scripts/release.mjs` で配布用ツリーを作る
