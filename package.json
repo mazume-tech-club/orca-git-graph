@@ -1,0 +1,20 @@
+{
+  "name": "orca-git-graph",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "pnpm -r --filter=!orca-git-graph build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "test:e2e": "pnpm --filter @orca-git-graph/web test:e2e",
+    "screenshots": "node scripts/screenshots.mjs",
+    "release": "node scripts/release.mjs",
+    "plugin:harness": "node packages/orca-plugin/scripts/host-harness.mjs"
+  },
+  "devDependencies": {}
+}
