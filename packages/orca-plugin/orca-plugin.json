@@ -1,11 +1,11 @@
 {
   "manifestVersion": 1,
   "id": "git-graph",
-  "publisher": "git-graph-dev",
+  "publisher": "mazume-tech-club",
   "name": "Git Graph",
   "version": "0.1.0",
   "description": "Open the whole repository's commit graph in an editor tab: all branches, remotes and tags, with ahead/behind comparison between any two refs.",
-  "repository": "https://github.com/OWNER/orca-git-graph",
+  "repository": "https://github.com/mazume-tech-club/orca-git-graph",
   "engines": { "orca": ">=1.4.0" },
   "pluginApi": 1,
   "main": "worker.mjs",

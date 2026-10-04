@@ -104,7 +104,7 @@ UI:
 
 - [ ] GitHub リリース（タグ付き）。Orca の「Git URL」からインストールできる形にする
   - Orca は指定した ref を `--depth 1` でクローンしてそのまま使うため、ビルド済みの配布用ツリーを別ブランチ（`plugin-dist`）／タグで公開する。`node scripts/release.mjs` が配布用ツリーを `release/` に作る（`--remote <url> --push` で公開）。**リモートリポジトリが未作成のため未公開**
-  - `orca-plugin.json` の `publisher`（現在は仮の `git-graph-dev`）と `repository`（`OWNER` の部分）は公開時に実際の値へ変更すること
+  - `orca-plugin.json` の `publisher` は `mazume-tech-club`、`repository` は GitHub の実 URL に設定済み
 - [x] README（日本語 / 英語）、スクリーンショットは架空のリポジトリで作成（`node scripts/screenshots.mjs`）
 - [ ] 必要なら marketplace index リポジトリを作成（`publisher` に `stablyai`、id に `orca-` 接頭辞は使用禁止）→ 見送り
 

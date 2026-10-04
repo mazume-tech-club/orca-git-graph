@@ -18,7 +18,7 @@
 ## インストール（Orca プラグインとして）
 
 1. Orca の **Settings → Plugins → Install from Git URL**
-2. URL: `https://github.com/<owner>/orca-git-graph`、Ref: `plugin-dist`（または `v0.1.0` などのリリースタグ）
+2. URL: `https://github.com/mazume-tech-club/orca-git-graph`、Ref: `plugin-dist`（または `v0.1.0` などのリリースタグ）
 3. 要求される 2 つの権限を許可: 「フォーカス中のワークツリーの名前・ブランチの読み取り」と「通知の表示」
 4. コマンドパレットから **Open Git Graph** を実行、またはショートカット **Ctrl/Cmd + Alt + Shift + O**
 

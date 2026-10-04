@@ -18,7 +18,7 @@ A Git commit graph for [Orca](https://github.com/stablyai/orca), opened as a **t
 ## Install (as an Orca plugin)
 
 1. Orca → **Settings → Plugins → Install from Git URL**
-2. URL: `https://github.com/<owner>/orca-git-graph`, Ref: `plugin-dist` (or a release tag such as `v0.1.0`)
+2. URL: `https://github.com/mazume-tech-club/orca-git-graph`, Ref: `plugin-dist` (or a release tag such as `v0.1.0`)
 3. Approve the two capabilities it asks for: *read the focused worktree's name/branch* and *show notifications*.
 4. Run **Open Git Graph** from the command palette, or press **Ctrl/Cmd + Alt + Shift + O**.
 
