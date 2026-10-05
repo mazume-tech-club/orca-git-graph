@@ -71,6 +71,7 @@ Orca（stablyai/orca）で、Git のコミットグラフを**エディタ領域
 - ワーカーから `child_process` を使えるのは現状の実装上の挙動で、公式に保証されていない（将来 `process:exec` capability で制限される可能性がある）。外部コマンド実行は1モジュールに集約し、差し替えやすくしておくこと
 - パネル（サイドバー）はネットワーク不可・`window.open` 無効・ワーカーと通信不可。グラフ自体の表示には使えない。**起動ボタンとしてだけ使う**（`panels/launcher.html`）: 親へ `postMessage({ type: 'orca-panel-action', requestId, action, params })` を送り、`{ type: 'orca-panel-action-result', requestId, ok, value | errorCode, error }` が返る。`action` はホスト API のメソッド名そのもので、パネルから呼べるのは `workspace.readContext` / `terminal.sendText` / `notifications.show` だけ
 - `terminal.sendText` は `{ terminalId, text, enter }`（text は 4096 文字まで）。`terminalId` は**アクティブなワークツリーのターミナルのうち明示した 1 つ**で、`readContext().terminals[].id` から選ぶ（「アクティブなターミナル」は対象にできない）。ターミナルの種類（エージェントかどうか）は分からないため、パネルは**自動選択せず**、ユーザーに選ばせて警告を出す
+- **パネルの `icon` は固定の許可リストからしか選べない**（小文字化してハイフンを除いた名前で照合。リスト外は汎用のプラグ型アイコンになる）: activity, barchart3, bell, blocks, book, bot, bug, calendar, cloud, code, database, filetext, flag, folder, gauge, globe, hammer, layers, lightbulb, package, plug, puzzle, rocket, star, terminal, wrench, zap。`git-graph` や `git-branch` は無効。本プラグインは `activity`
 - パネルはプラグインのインストール先を知らない。ワーカーが起動のたびに `~/.orca-git-graph/launch.mjs`（`open.mjs` へ転送するスタブ）を書き、パネルは `node -e "import(…launch.mjs)"` を端末に入力する（PowerShell / cmd / sh で同じ引用符で動くことをテスト済み）。ワーカーは最初のコマンド実行かイベントでしか起動しないので、**最初に一度パレットから実行する必要がある**
 - API 全体が experimental。バージョン依存の箇所にはコメントで根拠を書くこと
 

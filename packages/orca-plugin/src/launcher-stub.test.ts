@@ -66,6 +66,24 @@ describe('launcher stub', () => {
   });
 });
 
+// Orca resolves a panel's `icon` from a fixed list (right-sidebar activity bar, Orca 1.4.220): the name is lower-cased and
+// dashes are dropped, and anything else silently becomes the generic plug icon. A name like "git-graph" does NOT work.
+const ORCA_PANEL_ICONS = [
+  'activity', 'barchart3', 'bell', 'blocks', 'book', 'bot', 'bug', 'calendar', 'cloud', 'code', 'database', 'filetext', 'flag',
+  'folder', 'gauge', 'globe', 'hammer', 'layers', 'lightbulb', 'package', 'plug', 'puzzle', 'rocket', 'star', 'terminal', 'wrench', 'zap',
+];
+
+describe('manifest panel icon', () => {
+  it('is one of the icons Orca knows, and not the generic plug it falls back to', () => {
+    const manifest = JSON.parse(readFileSync(join(here, '..', 'orca-plugin.json'), 'utf8')) as { contributes: { panels: Array<{ icon: string }> } };
+    for (const p of manifest.contributes.panels) {
+      const key = p.icon.replaceAll('-', '').toLowerCase();
+      expect(ORCA_PANEL_ICONS).toContain(key);
+      expect(key).not.toBe('plug');
+    }
+  });
+});
+
 describe('manifest panel', () => {
   const manifest = JSON.parse(readFileSync(join(here, '..', 'orca-plugin.json'), 'utf8')) as {
     contributes: { panels: Array<{ id: string; title: string; entry: string }> };

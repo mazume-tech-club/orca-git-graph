@@ -39,7 +39,7 @@ Orca → *Settings → Plugins → Install from Git URL* → URL `https://github
 
 ### One-click button (right sidebar)
 
-The plugin adds a **Git Graph** icon to Orca's right sidebar. Open it, pick a terminal, and press **Open Git Graph**.
+The plugin adds a **Git Graph** panel to Orca's right sidebar (its icon is a pulse line; Orca only allows a fixed set of icons for plugins). Open it, pick a terminal, and press **Open Git Graph**.
 
 - The button works by typing a short command into a terminal **that you pick**. Orca's plugin API offers no other way for a button to start something. Pick a plain shell; **do not pick a terminal where Claude Code or another agent is running**, because the text would go to its prompt. The panel never chooses a terminal for you.
 - After you have picked a terminal, the choice is kept while the panel stays open, so later clicks are one click.

@@ -30,7 +30,7 @@
       {
         "id": "launcher",
         "title": "Git Graph",
-        "icon": "git-graph",
+        "icon": "activity",
         "entry": "panels/launcher.html"
       }
     ]
