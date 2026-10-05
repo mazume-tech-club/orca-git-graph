@@ -28,6 +28,11 @@ command into a terminal the user picks (a panel cannot tell a plain shell from a
 needs the broad `terminal:send` capability for what is really "run my own command", and it needs the plugin's install
 path to be discoverable. A first-class command button would remove all of that.
 
+What the panel would need instead (even without a toolbar button): one more panel-callable action, either
+`commands.run({ commandId })` (run one of the plugin's own commands, so the worker does the work) or
+`terminal.create({ command, cwd })`. Today a panel can neither create a terminal nor invoke a command, so a user who has
+no spare plain-shell terminal cannot use the button, and the panel cannot launch anything by itself when it is opened.
+
 Proposal: e.g. `contributes.commands[].placement: ["tabBar" | "toolbar" | "newTabMenu"]` (with `icon`), so a command can
 be offered next to the browser/terminal "new tab" entries. The built-in *Quick Commands* button in the tab bar shows
 the UI pattern already exists; it just isn't available to plugins.
