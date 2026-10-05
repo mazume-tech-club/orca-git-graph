@@ -266,8 +266,9 @@ export function App() {
     [log.ensure, scrollToIndex, select], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const runSearch = useCallback(async () => {
-    const q = query.trim();
+  // `text` is the input's current value: the `query` state can lag one render behind a fast "type, Enter"
+  const runSearch = useCallback(async (text: string) => {
+    const q = text.trim();
     if (!q || !info) return setFound(null);
     try {
       const r = await api.search(q, info.rev, scope);
@@ -276,7 +277,7 @@ export function App() {
     } catch {
       setFound({ q, indices: [], truncated: false });
     }
-  }, [query, info, scope, gotoMatch]);
+  }, [info, scope, gotoMatch]);
 
   const stepMatch = useCallback(
     (dir: 1 | -1) => {
@@ -295,7 +296,7 @@ export function App() {
   const searchModel: SearchModel = {
     query,
     setQuery,
-    enter: (shift) => (found && found.q === query.trim() ? stepMatch(shift ? -1 : 1) : void runSearch()),
+    enter: (shift, text) => (found && found.q === text.trim() ? stepMatch(shift ? -1 : 1) : void runSearch(text)),
     matches: found?.indices.length ?? 0,
     active,
     truncated: found?.truncated ?? false,

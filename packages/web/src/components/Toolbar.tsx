@@ -10,7 +10,7 @@ export interface SearchModel {
   query: string;
   setQuery: (q: string) => void;
   /** Enter / Shift+Enter in the box: run the search, or step through matches when it is already run */
-  enter: (shift: boolean) => void;
+  enter: (shift: boolean, text: string) => void;
   matches: number;
   active: number;
   truncated: boolean;
@@ -116,7 +116,7 @@ export function Toolbar({ info, search, fetchState, fetchMessage, onFetch, compa
             if (e.key === 'Enter') {
               e.preventDefault();
               if (e.nativeEvent.isComposing) return; // Enter that confirms an IME conversion
-              search.enter(e.shiftKey);
+              search.enter(e.shiftKey, e.currentTarget.value);
             }
           }}
         />
