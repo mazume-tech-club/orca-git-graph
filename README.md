@@ -19,7 +19,7 @@ node ~/orca-git-graph/server.mjs
 ```
 
 **As an Orca plugin — one shortcut, opens as a tab in the focused worktree:**
-Orca → *Settings → Plugins → Install from Git URL* → URL `https://github.com/mazume-tech-club/orca-git-graph`, Ref `plugin-dist` (details [below](#install-as-an-orca-plugin)).
+Orca → *Settings → Plugins → Install from Git URL* → enter `https://github.com/mazume-tech-club/orca-git-graph#plugin-v0.1.0` (details [below](#install-as-an-orca-plugin)).
 
 ## What you get
 
@@ -33,7 +33,7 @@ Orca → *Settings → Plugins → Install from Git URL* → URL `https://github
 ## Install (as an Orca plugin)
 
 1. Orca → **Settings → Plugins → Install from Git URL**
-2. URL: `https://github.com/mazume-tech-club/orca-git-graph`, Ref: `plugin-dist` (or a release tag such as `plugin-v0.1.0`)
+2. Enter the repository URL **with a `#ref`** (Orca requires a tag or commit to pin the install): `https://github.com/mazume-tech-club/orca-git-graph#plugin-v0.1.0`
 3. Approve the three capabilities it asks for: *read the focused worktree's name, branch and terminal list*, *show notifications*, and *type text into a terminal you choose* (used only by the sidebar button below).
 4. Run **Open Git Graph** from the command palette (**Ctrl/Cmd + Shift + J**), or press **Ctrl/Cmd + Alt + Shift + O**. Do this once even if you plan to use the button: it sets up the launcher file the button needs.
 

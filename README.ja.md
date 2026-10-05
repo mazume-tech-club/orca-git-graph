@@ -19,7 +19,7 @@ node ~/orca-git-graph/server.mjs
 ```
 
 **Orca プラグインとして（ショートカット 1 つで、フォーカス中のワークツリーにタブで開く）:**
-Orca の *Settings → Plugins → Install from Git URL* に、URL `https://github.com/mazume-tech-club/orca-git-graph`、Ref `plugin-dist` を入力します（詳細は[下記](#インストールorca-プラグインとして)）。
+Orca の *Settings → Plugins → Install from Git URL* に、`https://github.com/mazume-tech-club/orca-git-graph#plugin-v0.1.0` を入力します（詳細は[下記](#インストールorca-プラグインとして)）。
 
 ## できること
 
@@ -33,7 +33,7 @@ Orca の *Settings → Plugins → Install from Git URL* に、URL `https://gith
 ## インストール（Orca プラグインとして）
 
 1. Orca の **Settings → Plugins → Install from Git URL**
-2. URL: `https://github.com/mazume-tech-club/orca-git-graph`、Ref: `plugin-dist`（または `plugin-v0.1.0` などのリリースタグ）
+2. リポジトリの URL の末尾に **`#ref`（タグまたはコミット）** を付けて入力します（Orca はインストールを固定するため必須です）: `https://github.com/mazume-tech-club/orca-git-graph#plugin-v0.1.0`
 3. 要求される 3 つの権限を許可: 「フォーカス中のワークツリーの名前・ブランチ・ターミナル一覧の読み取り」「通知の表示」「選んだターミナルへの文字入力」（最後のものは、下のサイドバーのボタンだけが使います）
 4. コマンドパレット（**Ctrl/Cmd + Shift + J**）から **Open Git Graph** を実行、またはショートカット **Ctrl/Cmd + Alt + Shift + O**。ボタンを使う場合も、最初に一度だけ実行してください（ボタンが使う起動用ファイルが作られます）。
 

@@ -20,10 +20,14 @@ The same tree is also what the *standalone* install in the README clones, so one
 
 Install, as users see it (Orca → Settings → Plugins → Install from Git URL):
 
-| Field | Value |
-|---|---|
-| URL | `https://github.com/mazume-tech-club/orca-git-graph` |
-| Ref | `plugin-dist` (latest) or `plugin-v0.1.0` (pinned) |
+The dialog has a single field and requires an explicit `#ref` (a tag or a commit) so the install is pinned:
+
+```
+https://github.com/mazume-tech-club/orca-git-graph#plugin-v0.1.0
+```
+
+Use the tag (or a commit hash). Whether a branch name such as `#plugin-dist` is accepted is unverified, so the README only documents tags.
+A tag that is force-moved changes what an existing pin means: for a real release, bump the version and publish a new tag.
 
 Before the first release: check `packages/orca-plugin/orca-plugin.json` (`publisher`, `repository`, `version`), run
 `pnpm test && pnpm test:e2e`, and try the built plugin once in Orca (`packages/orca-plugin/dist` via Settings → Plugins → Development).
@@ -96,7 +100,7 @@ Post these yourself, and look at the community rules first. Use the GIF from `do
 > - live refresh when refs change (keeps scroll position and your comparison); Fetch only when you press the button
 > - 10k-commit repositories open in about a second
 >
-> Install: Settings → Plugins → Install from Git URL → `https://github.com/mazume-tech-club/orca-git-graph`, Ref `plugin-dist`.
+> Install: Settings → Plugins → Install from Git URL → `https://github.com/mazume-tech-club/orca-git-graph#plugin-v0.1.0`.
 > Standalone (no Orca): `node server.mjs --open` inside any repository — see the README.
 >
 > It is read-only apart from an explicit Fetch button, binds to 127.0.0.1 only with a random token per run, and runs git via `execFile`.
