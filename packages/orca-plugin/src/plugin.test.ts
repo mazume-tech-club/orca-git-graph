@@ -35,7 +35,7 @@ describe('orca-plugin.json', () => {
   });
 
   it('asks only for the capabilities it uses', () => {
-    expect(manifest.capabilities.map((c) => c.kind).sort()).toEqual(['notifications:show', 'workspace:read']);
+    expect(manifest.capabilities.map((c) => c.kind).sort()).toEqual(['notifications:show', 'terminal:send', 'workspace:read']);
     for (const c of manifest.capabilities) expect(CAPABILITY_KINDS).toContain(c.kind);
   });
 

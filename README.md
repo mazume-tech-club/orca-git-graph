@@ -34,10 +34,19 @@ Orca → *Settings → Plugins → Install from Git URL* → URL `https://github
 
 1. Orca → **Settings → Plugins → Install from Git URL**
 2. URL: `https://github.com/mazume-tech-club/orca-git-graph`, Ref: `plugin-dist` (or a release tag such as `plugin-v0.1.0`)
-3. Approve the two capabilities it asks for: *read the focused worktree's name/branch* and *show notifications*.
-4. Run **Open Git Graph** from the command palette, or press **Ctrl/Cmd + Alt + Shift + O**.
+3. Approve the three capabilities it asks for: *read the focused worktree's name, branch and terminal list*, *show notifications*, and *type text into a terminal you choose* (used only by the sidebar button below).
+4. Run **Open Git Graph** from the command palette (**Ctrl/Cmd + Shift + J**), or press **Ctrl/Cmd + Alt + Shift + O**. Do this once even if you plan to use the button: it sets up the launcher file the button needs.
 
-Plugin shortcuts do not fire while a terminal has focus, and Orca's plugin API cannot add buttons. As a one-click alternative, add an Orca **Quick Command** that runs the bundled CLI from any terminal inside the worktree:
+### One-click button (right sidebar)
+
+The plugin adds a **Git Graph** icon to Orca's right sidebar. Open it, pick a terminal, and press **Open Git Graph**.
+
+- The button works by typing a short command into a terminal **that you pick**. Orca's plugin API offers no other way for a button to start something. Pick a plain shell; **do not pick a terminal where Claude Code or another agent is running**, because the text would go to its prompt. The panel never chooses a terminal for you.
+- After you have picked a terminal, the choice is kept while the panel stays open, so later clicks are one click.
+
+### Other ways to start it
+
+Plugin shortcuts do not fire while a terminal has focus. As another one-click route, add an Orca **Quick Command** that runs the bundled CLI from a plain shell terminal inside the worktree:
 
 ```sh
 node <plugin folder>/open.mjs

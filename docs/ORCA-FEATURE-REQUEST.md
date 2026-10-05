@@ -23,6 +23,11 @@ Today: `contributes.commands` shows up in the palette only. `contributes.panels`
 cannot run a command, cannot reach the worker, and `PLUGIN_PANEL_ACTIONS` is limited to `workspace.readContext`,
 `terminal.sendText` and `notifications.show` (CSP `default-src 'none'; connect-src 'none'`).
 
+Workaround in use today: a panel with a button that calls `terminal.sendText`. It works, but it has to type a shell
+command into a terminal the user picks (a panel cannot tell a plain shell from an agent's terminal, so it must ask), it
+needs the broad `terminal:send` capability for what is really "run my own command", and it needs the plugin's install
+path to be discoverable. A first-class command button would remove all of that.
+
 Proposal: e.g. `contributes.commands[].placement: ["tabBar" | "toolbar" | "newTabMenu"]` (with `icon`), so a command can
 be offered next to the browser/terminal "new tab" entries. The built-in *Quick Commands* button in the tab bar shows
 the UI pattern already exists; it just isn't available to plugins.

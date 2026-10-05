@@ -1,5 +1,5 @@
 // Assembles the installable plugin into ./dist :
-//   orca-plugin.json  worker.mjs  open.mjs  server.mjs  web/  (README, LICENSE)
+//   orca-plugin.json  worker.mjs  open.mjs  server.mjs  web/  panels/  (README, LICENSE)
 // Orca installs a plugin by shallow-cloning a Git ref and using the tree as-is (no build step), so this
 // directory is what gets published (see scripts/release.mjs).
 import { build } from 'esbuild';
@@ -34,6 +34,8 @@ await build({
 });
 
 await cp(webDist, join(out, 'web'), { recursive: true });
+// sidebar panel(s) declared in contributes.panels
+await cp(join(here, 'panels'), join(out, 'panels'), { recursive: true });
 
 const pkg = JSON.parse(await readFile(join(here, 'package.json'), 'utf8'));
 const manifest = JSON.parse(await readFile(join(here, 'orca-plugin.json'), 'utf8'));

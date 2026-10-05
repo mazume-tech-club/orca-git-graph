@@ -65,11 +65,13 @@ Orca（stablyai/orca）で、Git のコミットグラフを**エディタ領域
 ## Orca プラグイン API v0 の制約（stablyai/orca `src/shared/plugins/*` より）
 
 - マニフェストは `orca-plugin.json`。`manifestVersion: 1`、`pluginApi: 1`、`engines.orca: ">=x.y.z"` 形式のみ
-- capability は7種類のみ: `workspace:read`, `terminal:send`, `notifications:show`, `storage`, `secrets`, `events:subscribe`, `settings:own`。本プロジェクトで使うのは `workspace:read` と `notifications:show`
+- capability は7種類のみ: `workspace:read`, `terminal:send`, `notifications:show`, `storage`, `secrets`, `events:subscribe`, `settings:own`。本プロジェクトで使うのは `workspace:read`、`notifications:show`、`terminal:send`（サイドバーの起動ボタン専用）
 - ワーカー（`main`）は子プロセスで動く ES モジュール。`export default async function activate(ctx)` で `ctx.commands.register(id, handler)` を呼ぶ。マニフェストで宣言したコマンドは必ず登録すること（未登録だと起動失敗）
 - **ワーカーはアイドル60秒で停止される**。HTTP サーバーをワーカー内で動かさないこと。`detached: true, stdio: 'ignore'` で別プロセスとして起動し `unref()` する
 - ワーカーから `child_process` を使えるのは現状の実装上の挙動で、公式に保証されていない（将来 `process:exec` capability で制限される可能性がある）。外部コマンド実行は1モジュールに集約し、差し替えやすくしておくこと
-- パネル（サイドバー）はネットワーク不可・`window.open` 無効・ワーカーと通信不可なので使わない
+- パネル（サイドバー）はネットワーク不可・`window.open` 無効・ワーカーと通信不可。グラフ自体の表示には使えない。**起動ボタンとしてだけ使う**（`panels/launcher.html`）: 親へ `postMessage({ type: 'orca-panel-action', requestId, action, params })` を送り、`{ type: 'orca-panel-action-result', requestId, ok, value | errorCode, error }` が返る。`action` はホスト API のメソッド名そのもので、パネルから呼べるのは `workspace.readContext` / `terminal.sendText` / `notifications.show` だけ
+- `terminal.sendText` は `{ terminalId, text, enter }`（text は 4096 文字まで）。`terminalId` は**アクティブなワークツリーのターミナルのうち明示した 1 つ**で、`readContext().terminals[].id` から選ぶ（「アクティブなターミナル」は対象にできない）。ターミナルの種類（エージェントかどうか）は分からないため、パネルは**自動選択せず**、ユーザーに選ばせて警告を出す
+- パネルはプラグインのインストール先を知らない。ワーカーが起動のたびに `~/.orca-git-graph/launch.mjs`（`open.mjs` へ転送するスタブ）を書き、パネルは `node -e "import(…launch.mjs)"` を端末に入力する（PowerShell / cmd / sh で同じ引用符で動くことをテスト済み）。ワーカーは最初のコマンド実行かイベントでしか起動しないので、**最初に一度パレットから実行する必要がある**
 - API 全体が experimental。バージョン依存の箇所にはコメントで根拠を書くこと
 
 ## 技術スタック

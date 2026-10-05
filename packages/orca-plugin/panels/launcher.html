@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  /* Orca injects its design tokens (--foreground, --border, ...) into the panel document. */
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 12px; font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Yu Gothic UI', sans-serif; color: var(--foreground); }
+  h1 { margin: 0 0 6px; font-size: 14px; }
+  p { margin: 0 0 10px; color: var(--muted-foreground, inherit); }
+  label { display: block; margin: 12px 0 4px; font-weight: 600; }
+  select, button { width: 100%; font: inherit; color: inherit; background: transparent; border: 1px solid var(--border, #8886); border-radius: var(--radius, 6px); padding: 6px 8px; }
+  button { cursor: pointer; font-weight: 600; }
+  button.primary { background: var(--primary, #0b63d4); color: var(--primary-foreground, #fff); border-color: transparent; }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 6px; }
+  .row select { flex: 1; min-width: 0; }
+  .row button { width: auto; }
+  .warn { margin: 10px 0; padding: 8px; border: 1px solid var(--destructive, #c33); border-radius: var(--radius, 6px); }
+  .status { min-height: 1.5em; margin-top: 8px; }
+  .status.error { color: var(--destructive, #c33); }
+  small { color: var(--muted-foreground, inherit); }
+</style>
+</head>
+<body>
+  <h1 id="title"></h1>
+  <p id="intro"></p>
+
+  <label for="terminal" id="terminalLabel"></label>
+  <div class="row">
+    <select id="terminal"></select>
+    <button id="refresh" type="button">↻</button>
+  </div>
+  <div class="warn" id="warn"></div>
+
+  <button id="open" class="primary" type="button" disabled></button>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <small id="hint"></small>
+
+<script>
+(function () {
+  'use strict';
+
+  var ja = (navigator.language || 'en').toLowerCase().indexOf('ja') === 0;
+  var T = ja ? {
+    title: 'Git Graph',
+    intro: 'フォーカス中のワークツリーのコミットグラフを、エディタのタブで開きます。',
+    terminal: '実行するターミナル',
+    choose: 'ターミナルを選択…',
+    none: '（ターミナルがありません。先にターミナルを開いてください）',
+    term: 'ターミナル',
+    warn: '選んだターミナルにコマンドを入力して実行します。Claude Code などが動いているターミナルは選ばず、通常のシェルを選んでください。',
+    open: 'Git Graph を開く',
+    sending: '送信中…',
+    sent: '送信しました。ターミナルに結果が表示されます。',
+    failed: '送信に失敗しました: ',
+    noWorktree: 'フォーカス中のワークツリーがありません。',
+    hint: '初回だけ、コマンドパレット（Ctrl+Shift+J）で「Open Git Graph」を一度実行してください（起動用ファイルが作られます）。'
+  } : {
+    title: 'Git Graph',
+    intro: 'Opens the commit graph of the focused worktree in an editor tab.',
+    terminal: 'Terminal to run it in',
+    choose: 'Choose a terminal…',
+    none: '(no terminals - open one first)',
+    term: 'Terminal',
+    warn: 'The command is typed into the terminal you pick and run. Do not pick a terminal where Claude Code or another agent is running; pick a plain shell.',
+    open: 'Open Git Graph',
+    sending: 'Sending…',
+    sent: 'Sent. The result appears in that terminal.',
+    failed: 'Could not send: ',
+    noWorktree: 'No worktree is focused.',
+    hint: 'First time only: run "Open Git Graph" once from the command palette (Ctrl+Shift+J); it creates the launcher file.'
+  };
+
+  // The panel cannot know where the plugin is installed. The plugin's worker writes this stub (see launcher-stub.ts)
+  // every time it starts; `node -e` with only quotes/parentheses works the same in PowerShell, cmd and POSIX shells.
+  var STUB = "'/.orca-git-graph/launch.mjs'";
+  var MSG = "'Git Graph: run Open Git Graph from the command palette once, then try again'";
+  var COMMAND = 'node -e "import(require(\'url\').pathToFileURL(require(\'os\').homedir()+' + STUB + ')).catch(()=>console.log(' + MSG + '))"';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var seq = 0;
+  var pending = {};
+  var terminals = [];
+  var chosen = '';
+
+  $('title').textContent = T.title;
+  $('intro').textContent = T.intro;
+  $('terminalLabel').textContent = T.terminal;
+  $('warn').textContent = T.warn;
+  $('open').textContent = T.open;
+  $('hint').textContent = T.hint;
+
+  // ---- request/response over the host bridge (docs: orca-panel-action / orca-panel-action-result) ----
+  function call(action, params) {
+    return new Promise(function (resolve, reject) {
+      var id = 'r' + (++seq) + '-' + Date.now();
+      pending[id] = { resolve: resolve, reject: reject };
+      window.parent.postMessage({ type: 'orca-panel-action', requestId: id, action: action, params: params }, '*');
+      setTimeout(function () {
+        if (pending[id]) { delete pending[id]; reject(new Error('timeout')); }
+      }, 15000);
+    });
+  }
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (e.source !== window.parent || !d || d.type !== 'orca-panel-action-result') return;
+    var p = pending[d.requestId];
+    if (!p) return;
+    delete pending[d.requestId];
+    if (d.ok) p.resolve(d.value); else p.reject(new Error(d.error || d.errorCode || 'failed'));
+  });
+
+  function status(text, isError) {
+    var el = $('status');
+    el.textContent = text || '';
+    el.className = 'status' + (isError ? ' error' : '');
+  }
+
+  function render() {
+    var sel = $('terminal');
+    sel.innerHTML = '';
+    var first = document.createElement('option');
+    first.value = '';
+    first.textContent = terminals.length ? T.choose : T.none;
+    sel.appendChild(first);
+    terminals.forEach(function (t, i) {
+      var o = document.createElement('option');
+      o.value = t.id;
+      o.textContent = T.term + ' ' + (i + 1);
+      sel.appendChild(o);
+    });
+    // never pick a terminal on the user's behalf; keep an earlier choice only while that terminal still exists
+    if (!terminals.some(function (t) { return t.id === chosen; })) chosen = '';
+    sel.value = chosen;
+    $('open').disabled = chosen === '';
+  }
+
+  function refresh() {
+    return call('workspace.readContext').then(function (ctx) {
+      terminals = ctx && ctx.terminals ? ctx.terminals : [];
+      status(ctx ? '' : T.noWorktree, !ctx);
+      render();
+    }, function (e) {
+      status(T.failed + e.message, true);
+    });
+  }
+
+  $('terminal').addEventListener('change', function () {
+    chosen = $('terminal').value;
+    $('open').disabled = chosen === '';
+  });
+  $('refresh').addEventListener('click', refresh);
+  window.addEventListener('focus', refresh);
+
+  $('open').addEventListener('click', function () {
+    if (!chosen) return;
+    $('open').disabled = true;
+    status(T.sending, false);
+    call('terminal.sendText', { terminalId: chosen, text: COMMAND, enter: true }).then(function (r) {
+      if (r && r.accepted === false) throw new Error('not accepted');
+      status(T.sent, false);
+    }).catch(function (e) {
+      status(T.failed + e.message, true);
+    }).then(function () {
+      $('open').disabled = chosen === '';
+    });
+  });
+
+  render();
+  refresh();
+})();
+</script>
+</body>
+</html>

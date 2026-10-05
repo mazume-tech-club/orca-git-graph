@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { countUiClients, resolveOrcaCli, type WorkspaceContext } from '@orca-git-graph/platform';
 import { openGitGraph, realOrca } from './launcher.js';
 import { ensureServer } from './server-process.js';
+import { writeLauncherStub } from './launcher-stub.js';
 import { fileWorktreeCache } from './worktree-cache.js';
 
 interface PluginContext {
@@ -24,6 +25,9 @@ interface PluginContext {
 const here = dirname(fileURLToPath(import.meta.url));
 
 export default async function activate(ctx: PluginContext): Promise<void> {
+  // lets the sidebar panel start the graph without knowing where this plugin is installed (see launcher-stub.ts)
+  void writeLauncherStub(join(here, 'open.mjs')).catch((e: unknown) => ctx.log(`could not write the launcher stub: ${String(e)}`));
+
   ctx.commands.register('open-git-graph', async () => {
     const result = await openGitGraph({
       readContext: async () => (await ctx.host.call('workspace.readContext')) as WorkspaceContext | null,
