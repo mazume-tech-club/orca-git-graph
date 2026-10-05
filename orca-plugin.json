@@ -1,0 +1,49 @@
+{
+  "manifestVersion": 1,
+  "id": "git-graph",
+  "publisher": "mazume-tech-club",
+  "name": "Git Graph",
+  "version": "0.1.0",
+  "description": "Open the whole repository's commit graph in an editor tab: all branches, remotes and tags, with ahead/behind comparison between any two refs.",
+  "repository": "https://github.com/mazume-tech-club/orca-git-graph",
+  "engines": {
+    "orca": ">=1.4.0"
+  },
+  "pluginApi": 1,
+  "main": "worker.mjs",
+  "contributes": {
+    "commands": [
+      {
+        "id": "open-git-graph",
+        "title": "Open Git Graph",
+        "context": "worktree"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "open-git-graph",
+        "key": "Mod+Alt+Shift+O",
+        "when": "worktree"
+      }
+    ],
+    "panels": [
+      {
+        "id": "launcher",
+        "title": "Git Graph",
+        "icon": "activity",
+        "entry": "panels/launcher.html"
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "kind": "workspace:read"
+    },
+    {
+      "kind": "terminal:send"
+    },
+    {
+      "kind": "notifications:show"
+    }
+  ]
+}
