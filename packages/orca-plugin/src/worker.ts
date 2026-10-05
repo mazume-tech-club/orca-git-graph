@@ -8,6 +8,7 @@
  *   - the worker may spawn processes (not guaranteed; see server-process.ts)
  * Checked against Orca 1.4.220 (src/shared/plugins/*).
  */
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { countUiClients, resolveOrcaCli, type WorkspaceContext } from '@orca-git-graph/platform';
@@ -26,7 +27,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 export default async function activate(ctx: PluginContext): Promise<void> {
   // lets the sidebar panel start the graph without knowing where this plugin is installed (see launcher-stub.ts)
-  void writeLauncherStub(join(here, 'open.mjs')).catch((e: unknown) => ctx.log(`could not write the launcher stub: ${String(e)}`));
+  // (only from the built plugin: when run from source there is no open.mjs next to this file, and a stub pointing
+  // at a path that does not exist would break the button)
+  const openFile = join(here, 'open.mjs');
+  if (existsSync(openFile)) void writeLauncherStub(openFile).catch((e: unknown) => ctx.log(`could not write the launcher stub: ${String(e)}`));
 
   ctx.commands.register('open-git-graph', async () => {
     const result = await openGitGraph({

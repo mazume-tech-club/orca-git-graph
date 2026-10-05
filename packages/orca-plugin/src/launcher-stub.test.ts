@@ -56,13 +56,17 @@ describe('launcher stub', () => {
     expect(panel).toContain(`'/${STUB_DIR_NAME}/${STUB_FILE_NAME}'`);
   });
 
-  it('is written by the worker when it starts', async () => {
+  it('is NOT written when the worker runs from source (no open.mjs beside it)', async () => {
     process.env.HOME = home;
     process.env.USERPROFILE = home;
     await activate({ commands: { register: () => undefined }, host: { call: async () => null }, log: () => undefined });
-    const t0 = Date.now();
-    while (!existsSync(stubPath(home)) && Date.now() - t0 < 3000) await new Promise((r) => setTimeout(r, 25));
-    expect(existsSync(stubPath(home))).toBe(true);
+    await new Promise((r) => setTimeout(r, 300));
+    expect(existsSync(stubPath(home))).toBe(false);
+  });
+
+  it('is written by writeLauncherStub with the path of the real open.mjs', async () => {
+    const file = await writeLauncherStub(join(home, 'dist', 'open.mjs'), home);
+    expect(readFileSync(file, 'utf8')).toContain('/dist/open.mjs');
   });
 });
 
